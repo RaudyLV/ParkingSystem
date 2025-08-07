@@ -5,6 +5,6 @@ namespace Domain.Settings
         public string Key { get; set; }
         public string Issuer { get; set; }
         public string Audience { get; set; }
-        public DateTime ExpireMinutes { get; set; }
+        public double ExpireMinutes { get; set; }
     }
 }
