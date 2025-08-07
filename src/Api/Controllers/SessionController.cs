@@ -1,18 +1,25 @@
 
 using Application.Features.ParkingSession.Queries;
 using Application.Features.ParkingSessions.Commands.CreateSessionCommands;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Operador")]
     public class SessionController : BaseApiController
     {
         [HttpGet]
         public async Task<IActionResult> GetAllSeccions()
         {
-            return Ok(await Mediator.Send(new GetAllActiveSessionsQuery()));
+            var result = await Mediator.Send(new GetAllActiveSessionsQuery());
+
+            if (result == null || !result.Data.Any())
+                return NoContent(); 
+
+            return Ok(result);
         }
 
         [HttpGet("{vehicleplate}")]
@@ -25,22 +32,28 @@ namespace Api.Controllers
         }
 
         [HttpPost]
-        [ActionName("Entry")]
         public async Task<IActionResult> EntrySession([FromBody] CreateSessionCommand request)
         {
-            return Ok(await Mediator.Send(new CreateSessionCommand
-            {
-                SlotId = request.SlotId,
-                VehicleInfo = request.VehicleInfo,
-                VehiclePlate = request.VehiclePlate
-            }));
+            var command = await Mediator.Send(request);
+
+            if (!command.Succeeded)
+                return BadRequest(command.Errors);
+
+            return CreatedAtAction(nameof(GetAllSeccions), new { id = request.SlotId }, request);
         }
 
-       [HttpPut("{sessionId}")]
+        [HttpPut("{sessionId}")]
         public async Task<IActionResult> ExitSession(Guid sessionId, [FromBody] UpdateSessionCommand request)
         {
-            request.SessionId = sessionId;
-            return Ok(await Mediator.Send(request));
+            if (sessionId != request.SessionId)
+                return BadRequest("Session ID en la URL no matchea el pasado en el query");
+
+            var response = await Mediator.Send(request);
+
+            if (!response.Succeeded)
+                return BadRequest(response.Errors);
+
+            return NoContent();
         }
 
     }
