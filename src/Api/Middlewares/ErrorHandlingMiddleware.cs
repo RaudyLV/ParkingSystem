@@ -1,6 +1,3 @@
-
-
-
 using System.Net;
 using System.Text.Json;
 using Application.Exceptions;
@@ -28,7 +25,6 @@ namespace Api.Middlewares
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unhandled exception occurred while processing the request.");
-                context.Response.StatusCode = 500; // Internal Server Error
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -39,7 +35,7 @@ namespace Api.Middlewares
             {
                 return;
             }
-
+    
             var code = HttpStatusCode.InternalServerError;
             var result = string.Empty;
 
@@ -61,10 +57,7 @@ namespace Api.Middlewares
 
             if (string.IsNullOrEmpty(result))
             {
-                result = JsonSerializer.Serialize(new
-                {
-                    error = ex.Message,
-                });
+                result = JsonSerializer.Serialize(new { error = ex.Message });
             }
 
             await context.Response.WriteAsync(result);

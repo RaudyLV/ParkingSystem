@@ -1,32 +1,41 @@
 
 using Application.Features.ParkingSlot.Queries;
 using Application.Features.ParkingSlots.Commands.CreateSlotsCommand;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Operador")]
     public class SlotController : BaseApiController
     {
         [HttpGet]
         public async Task<IActionResult> GetSlots()
         {
-            return Ok(await Mediator.Send(new GetAllSlotsQuery()));
+            var response = await Mediator.Send(new GetAllSlotsQuery());
+
+            if (response is null || !response.Data.Any())
+                return NoContent();
+
+            return Ok(response);
         }
         [HttpGet("{vehicleType}")]
         public async Task<IActionResult> GetSlotsByVehicleType(string vehicleType)
         {
-            return Ok(await Mediator.Send(new GetSlotsByVehicleTypeQuery{VehicleType = vehicleType}));
+            return Ok(await Mediator.Send(new GetSlotsByVehicleTypeQuery { VehicleType = vehicleType }));
         }
         [HttpPost]
-        public async Task<IActionResult> CreateSlot([FromBody] CreateSlotCommand slot)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateSlot([FromBody] CreateSlotCommand request)
         {
-            return Ok(await Mediator.Send(new CreateSlotCommand
-            {
-                VehicleType = slot.VehicleType,
-                LocationCode = slot.LocationCode,
-            }));
+            var response = await Mediator.Send(request);
+
+            if (!response.Succeeded)
+                return BadRequest(response.Errors);
+
+            return CreatedAtAction(nameof(GetSlots), new { id = request.LocationCode }, request);
         }
     }
 }
