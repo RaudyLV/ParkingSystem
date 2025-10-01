@@ -70,7 +70,7 @@ namespace Infraestructure.Identity
                        if (context.Response.HasStarted) return;
                        context.Response.StatusCode = 500;
                        context.Response.ContentType = "application/json";
-                       var result = JsonConvert.SerializeObject(new Response<string>("MIELDA PA LAS AGUILA"));
+                       var result = JsonConvert.SerializeObject(new Response<string>("Error de autenticacion"));
                        await context.Response.WriteAsync(result);
                    },
 
